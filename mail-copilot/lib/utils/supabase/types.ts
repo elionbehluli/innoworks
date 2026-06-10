@@ -122,6 +122,66 @@ export type Database = {
         }
         Relationships: []
       }
+      threads: {
+        Row: {
+          ai_draft_reply: string | null
+          assigned_to: string | null
+          body_text: string | null
+          category_id: string | null
+          created_at: string
+          id: string
+          locked_at: string | null
+          sender: string
+          snippet: string | null
+          status: Database["public"]["Enums"]["thread_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          ai_draft_reply?: string | null
+          assigned_to?: string | null
+          body_text?: string | null
+          category_id?: string | null
+          created_at?: string
+          id: string
+          locked_at?: string | null
+          sender?: string
+          snippet?: string | null
+          status?: Database["public"]["Enums"]["thread_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_draft_reply?: string | null
+          assigned_to?: string | null
+          body_text?: string | null
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          sender?: string
+          snippet?: string | null
+          status?: Database["public"]["Enums"]["thread_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "threads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       todos: {
         Row: {
           created_at: string
@@ -148,6 +208,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      thread_status: "PENDING" | "IN_PROGRESS" | "RESOLVED"
       user_role: "ADMIN" | "STAFF"
     }
     CompositeTypes: {
@@ -279,6 +340,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      thread_status: ["PENDING", "IN_PROGRESS", "RESOLVED"],
       user_role: ["ADMIN", "STAFF"],
     },
   },
