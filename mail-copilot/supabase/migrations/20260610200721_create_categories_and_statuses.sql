@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS public.statuses (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Seed the initial status mappings exactly as requested
 INSERT INTO public.statuses (id, name) VALUES
 (1, 'created'),
 (2, 'deleted'),
@@ -22,8 +21,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
     name TEXT NOT NULL UNIQUE,
     routing_rule TEXT NOT NULL,
     prompt_template TEXT NOT NULL,
-    -- Default to 1 ('created') on new insertions
-    status_id INTEGER NOT NULL DEFAULT 1 REFERENCES public.statuses(id), 
+    status_id INTEGER NOT NULL DEFAULT 1 REFERENCES public.statuses(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -49,25 +47,20 @@ CREATE TRIGGER trigger_update_categories_timestamp
 ALTER TABLE public.statuses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
--- --- STATUSES POLICIES ---
--- Everyone needs to read statuses to map IDs to human-readable names
-CREATE POLICY "Allow authenticated users to view system statuses" 
+CREATE POLICY "Allow authenticated users to view system statuses"
 ON public.statuses FOR SELECT TO authenticated USING (true);
 
--- --- CATEGORIES POLICIES ---
--- Staff and Admins can view active categories
-CREATE POLICY "Allow authenticated users to view categories" 
+CREATE POLICY "Allow authenticated users to view categories"
 ON public.categories FOR SELECT TO authenticated USING (true);
 
--- Restrict mutations strictly to ADMIN accounts
-CREATE POLICY "Only admins can modify, change status, or delete categories" 
+CREATE POLICY "Only admins can modify, change status, or delete categories"
 ON public.categories
-FOR ALL -- Covers INSERT, UPDATE (Inactivate/Soft Delete), and hard DELETE
-TO authenticated 
+FOR ALL
+TO authenticated
 USING (
     EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE profiles.id = auth.uid() 
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid()
         AND profiles.role = 'ADMIN'
     )
 );

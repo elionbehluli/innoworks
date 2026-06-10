@@ -28,7 +28,25 @@ export async function updateSession(request: NextRequest) {
     },
   })
 
-  await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const pathname = request.nextUrl.pathname
+  const isAuthRoute =
+    pathname.startsWith("/sign-in") || pathname.startsWith("/auth")
+
+  if (!user && !isAuthRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/sign-in"
+    return NextResponse.redirect(url)
+  }
+
+  if (user && pathname.startsWith("/sign-in")) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/"
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
