@@ -1,0 +1,73 @@
+-- =====================================================================
+-- 1. CREATE STATUSES LOOKUP TABLE & SEED DATA
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.statuses (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Seed the initial status mappings exactly as requested
+INSERT INTO public.statuses (id, name) VALUES
+(1, 'created'),
+(2, 'deleted'),
+(3, 'inactive')
+ON CONFLICT (id) DO NOTHING;
+
+-- =====================================================================
+-- 2. CREATE CATEGORIES TABLE (WITH STATUS FOREIGN KEY)
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.categories (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    routing_rule TEXT NOT NULL,
+    prompt_template TEXT NOT NULL,
+    -- Default to 1 ('created') on new insertions
+    status_id INTEGER NOT NULL DEFAULT 1 REFERENCES public.statuses(id), 
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- =====================================================================
+-- 3. AUTOMATION: AUTOMATIC UPDATED_AT TIMESTAMP
+-- =====================================================================
+CREATE OR REPLACE FUNCTION public.update_categories_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_categories_timestamp
+    BEFORE UPDATE ON public.categories
+    FOR EACH ROW EXECUTE FUNCTION public.update_categories_updated_at();
+
+-- =====================================================================
+-- 4. SECURITY: ROW LEVEL SECURITY (RLS) POLICIES
+-- =====================================================================
+ALTER TABLE public.statuses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+
+-- --- STATUSES POLICIES ---
+-- Everyone needs to read statuses to map IDs to human-readable names
+CREATE POLICY "Allow authenticated users to view system statuses" 
+ON public.statuses FOR SELECT TO authenticated USING (true);
+
+-- --- CATEGORIES POLICIES ---
+-- Staff and Admins can view active categories
+CREATE POLICY "Allow authenticated users to view categories" 
+ON public.categories FOR SELECT TO authenticated USING (true);
+
+-- Restrict mutations strictly to ADMIN accounts
+CREATE POLICY "Only admins can modify, change status, or delete categories" 
+ON public.categories
+FOR ALL -- Covers INSERT, UPDATE (Inactivate/Soft Delete), and hard DELETE
+TO authenticated 
+USING (
+    EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE profiles.id = auth.uid() 
+        AND profiles.role = 'ADMIN'
+    )
+);
