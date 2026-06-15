@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.ns"],
+    "strict": true
+  },
+  "imports": {
+    "@shared/debug": "../_shared/debug.ts",
+    "@shared/gmail-token": "../_shared/gmail-token.ts",
+    "@shared/supabase-admin": "../_shared/supabase-admin.ts"
+  }
+}

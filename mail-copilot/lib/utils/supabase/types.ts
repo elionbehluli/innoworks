@@ -77,6 +77,60 @@ export type Database = {
           },
         ]
       }
+      gmail_requests: {
+        Row: {
+          created_at: string
+          id: string
+          method: string
+          request_body: Json | null
+          request_headers: Json | null
+          response_body: Json | null
+          response_status: number | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          method: string
+          request_body?: Json | null
+          request_headers?: Json | null
+          response_body?: Json | null
+          response_status?: number | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          method?: string
+          request_body?: Json | null
+          request_headers?: Json | null
+          response_body?: Json | null
+          response_status?: number | null
+          url?: string
+        }
+        Relationships: []
+      }
+      gmail_token: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

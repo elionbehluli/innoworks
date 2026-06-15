@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="130d2f29-bdcb-45aa-b31f-89bb466b9bab" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/mail-copilot/lib/utils/supabase/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/mail-copilot/lib/utils/supabase/types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mail-copilot/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/mail-copilot/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mail-copilot/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/mail-copilot/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mail-copilot/supabase/config.toml" beforeDir="false" afterPath="$PROJECT_DIR$/mail-copilot/supabase/config.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mail-copilot/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/mail-copilot/tsconfig.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings">
+    <execution />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 1
+}]]></component>
+  <component name="ProjectId" id="3F2yDqUT2XqS0oAuwbOTaPavFtF" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-PS-251.29188.4" />
+        <option value="bundled-php-predefined-a98d8de5180a-e5747d4f5a45-com.jetbrains.php.sharedIndexes-PS-251.29188.4" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="130d2f29-bdcb-45aa-b31f-89bb466b9bab" name="Changes" comment="" />
+      <created>1781287341928</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1781287341928</updated>
+      <workItem from="1781287343198" duration="4000" />
+    </task>
+    <servers />
+  </component>
+</project>
