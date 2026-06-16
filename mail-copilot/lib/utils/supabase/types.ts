@@ -131,6 +131,47 @@ export type Database = {
         }
         Relationships: []
       }
+      past_replies: {
+        Row: {
+          category_id: string
+          created_at: string
+          embedding: string
+          id: string
+          inbound_email: string
+          outbound_reply: string
+          sender: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          embedding: string
+          id?: string
+          inbound_email: string
+          outbound_reply: string
+          sender: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          embedding?: string
+          id?: string
+          inbound_email?: string
+          outbound_reply?: string
+          sender?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "past_replies_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -259,7 +300,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_best_few_shot_examples: {
+        Args: {
+          match_count: number
+          match_threshold: number
+          query_embedding: string
+          target_category: string
+          target_sender: string
+        }
+        Returns: {
+          id: string
+          inbound_email: string
+          match_level: string
+          outbound_reply: string
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       thread_status: "PENDING" | "IN_PROGRESS" | "RESOLVED"

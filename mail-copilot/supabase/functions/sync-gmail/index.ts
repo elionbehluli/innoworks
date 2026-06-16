@@ -55,6 +55,10 @@ function extractBodyText(payload: {
 
 const BATCH_SIZE = 10
 
+// Exclude no-reply senders at the Gmail API query level so we never fetch them.
+const INBOX_SYNC_QUERY =
+  "is:unread label:INBOX newer_than:7d -from:noreply -from:no-reply"
+
 Deno.serve(async () => {
   const supabase = createAdminClient()
 
@@ -63,7 +67,7 @@ Deno.serve(async () => {
 
     const listResponse = await gmailFetch(
       supabase,
-      "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread+label:INBOX+newer_than:7d"
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(INBOX_SYNC_QUERY)}`
     )
     const listData = await listResponse.json()
     const messages = (listData.messages || []).slice(0, BATCH_SIZE)
