@@ -325,7 +325,7 @@ export type Database = {
       }
     }
     Enums: {
-      thread_status: "PENDING" | "IN_PROGRESS" | "RESOLVED"
+      thread_status: "PENDING" | "IN_PROGRESS" | "RESOLVED" | "SKIPPED"
       user_role: "ADMIN" | "STAFF"
     }
     CompositeTypes: {
@@ -457,7 +457,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      thread_status: ["PENDING", "IN_PROGRESS", "RESOLVED"],
+      thread_status: ["PENDING", "IN_PROGRESS", "RESOLVED", "SKIPPED"],
       user_role: ["ADMIN", "STAFF"],
     },
   },

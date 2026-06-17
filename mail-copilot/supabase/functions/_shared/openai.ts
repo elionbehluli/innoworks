@@ -247,7 +247,9 @@ function buildDraftMessages(
   ]
 
   for (const example of fewShotExamples) {
-    for (const message of parseThreadHistory(example.thread_history)) {
+    const history = parseThreadHistory(example.thread_history)
+
+    for (const message of history) {
       const label = message.role === "user" ? "[CLIENT]" : "[AGENT]"
       messages.push({
         role: message.role,
@@ -255,14 +257,24 @@ function buildDraftMessages(
       })
     }
 
-    messages.push({
-      role: "user",
-      content: `[CLIENT]\n${example.inbound_email}`,
-    })
-    messages.push({
-      role: "assistant",
-      content: example.outbound_reply,
-    })
+    const lastTwo = history.slice(-2)
+    const historyIncludesCurrentTurn =
+      lastTwo.length === 2 &&
+      lastTwo[0]?.role === "user" &&
+      lastTwo[0]?.content === example.inbound_email &&
+      lastTwo[1]?.role === "assistant" &&
+      lastTwo[1]?.content === example.outbound_reply
+
+    if (!historyIncludesCurrentTurn) {
+      messages.push({
+        role: "user",
+        content: `[CLIENT]\n${example.inbound_email}`,
+      })
+      messages.push({
+        role: "assistant",
+        content: example.outbound_reply,
+      })
+    }
   }
 
   messages.push({

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
 
+import { ThreadDraftEditor } from "@/components/threads/thread-draft-editor"
 import { createClient } from "@/lib/utils/supabase/server"
 import { cn } from "@/lib/utils"
 
@@ -9,6 +10,7 @@ const statusStyles: Record<string, string> = {
   PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
   IN_PROGRESS: "bg-primary/15 text-primary",
   RESOLVED: "bg-muted text-muted-foreground",
+  SKIPPED: "bg-muted text-muted-foreground",
 }
 
 function getCategoryName(
@@ -90,6 +92,8 @@ export default async function ThreadDetailPage({
       | { display_name: string | null }[]
       | null
   )
+  const isActionable =
+    thread.status === "PENDING" || thread.status === "IN_PROGRESS"
 
   return (
     <div className="space-y-6">
@@ -149,10 +153,10 @@ export default async function ThreadDetailPage({
           content={incomingEmail}
           emptyMessage="No email content available for this thread."
         />
-        <MessagePanel
-          title="AI draft reply"
-          content={thread.ai_draft_reply}
-          emptyMessage="No AI draft has been generated yet."
+        <ThreadDraftEditor
+          threadId={thread.id}
+          initialDraft={thread.ai_draft_reply ?? ""}
+          isActionable={isActionable}
         />
       </div>
     </div>

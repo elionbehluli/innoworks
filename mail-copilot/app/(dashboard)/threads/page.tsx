@@ -35,6 +35,9 @@ export default async function ThreadsPage() {
     .select(
       "id, subject, sender, snippet, status, assigned_to, created_at, categories(name)"
     )
+    .not("category_id", "is", null)
+    .not("ai_draft_reply", "is", null)
+    .in("status", ["PENDING", "IN_PROGRESS"])
     .order("status")
     .order("created_at", { ascending: false })
 
@@ -119,7 +122,9 @@ export default async function ThreadsPage() {
           </table>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">No threads yet.</p>
+        <p className="text-sm text-muted-foreground">
+          No threads ready for review yet.
+        </p>
       )}
     </div>
   )
