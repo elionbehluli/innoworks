@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { cookies } from "next/headers"
 
 import { ClaimButton } from "@/components/threads/claim-button"
@@ -61,7 +62,12 @@ export default async function ThreadsPage() {
                   className="border-b border-border last:border-b-0"
                 >
                   <td className="px-4 py-3">
-                    <p className="font-medium">{thread.subject}</p>
+                    <Link
+                      href={`/threads/${thread.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {thread.subject}
+                    </Link>
                     {thread.snippet && (
                       <p className="mt-0.5 line-clamp-1 text-muted-foreground">
                         {thread.snippet}
@@ -93,9 +99,19 @@ export default async function ThreadsPage() {
                     {formatDate(thread.created_at)}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {thread.status === "PENDING" && !thread.assigned_to && (
-                      <ClaimButton threadId={thread.id} />
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {thread.status !== "PENDING" || thread.assigned_to ? (
+                        <Link
+                          href={`/threads/${thread.id}`}
+                          className="text-sm text-primary hover:underline"
+                        >
+                          Open
+                        </Link>
+                      ) : null}
+                      {thread.status === "PENDING" && !thread.assigned_to && (
+                        <ClaimButton threadId={thread.id} />
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

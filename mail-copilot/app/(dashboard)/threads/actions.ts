@@ -18,16 +18,20 @@ export async function claimThread(threadId: string) {
     redirect("/sign-in")
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("threads")
     .update({ assigned_to: user.id, status: "IN_PROGRESS" })
     .eq("id", threadId)
     .eq("status", "PENDING")
     .is("assigned_to", null)
+    .select("id")
+    .single()
 
-  if (error) {
-    throw new Error(error.message)
+  if (error || !data) {
+    throw new Error(error?.message ?? "Thread is no longer available to claim.")
   }
 
   revalidatePath("/threads")
+  revalidatePath(`/threads/${threadId}`)
+  redirect(`/threads/${threadId}`)
 }

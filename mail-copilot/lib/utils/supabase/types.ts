@@ -140,6 +140,8 @@ export type Database = {
           inbound_email: string
           outbound_reply: string
           sender: string
+          thread_history: Json
+          thread_id: string | null
           updated_at: string
         }
         Insert: {
@@ -150,6 +152,8 @@ export type Database = {
           inbound_email: string
           outbound_reply: string
           sender: string
+          thread_history?: Json
+          thread_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -160,6 +164,8 @@ export type Database = {
           inbound_email?: string
           outbound_reply?: string
           sender?: string
+          thread_history?: Json
+          thread_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -314,6 +320,7 @@ export type Database = {
           match_level: string
           outbound_reply: string
           similarity: number
+          thread_history: Json
         }[]
       }
     }

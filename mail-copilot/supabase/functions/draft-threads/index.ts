@@ -4,6 +4,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createGmailDraftReply } from "../_shared/gmail-draft.ts"
 import { ensureGmailAccessToken } from "../_shared/gmail-token.ts"
 import { draftEmailReply } from "../_shared/openai.ts"
+import { fetchFewShotExamples, getLatestInboundText } from "../_shared/rag.ts"
+import { getOptionalThreadId } from "../_shared/request-params.ts"
 import { createAdminClient } from "../_shared/supabase-admin.ts"
 
 const BATCH_SIZE = 3
@@ -21,22 +23,31 @@ type ThreadWithCategory = {
   } | null
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   const supabase = createAdminClient()
+  const targetThreadId = await getOptionalThreadId(req)
 
   try {
     await ensureGmailAccessToken(supabase)
 
-    const { data: threads, error } = await supabase
+    let threadsQuery = supabase
       .from("threads")
       .select(
         "id, subject, sender, body_text, snippet, category_id, categories(name, prompt_template)"
       )
-      .not("category_id", "is", null)
-      .is("ai_draft_reply", null)
-      .eq("status", "PENDING")
-      .order("created_at", { ascending: true })
-      .limit(BATCH_SIZE)
+
+    if (targetThreadId) {
+      threadsQuery = threadsQuery.eq("id", targetThreadId)
+    } else {
+      threadsQuery = threadsQuery
+        .not("category_id", "is", null)
+        .is("ai_draft_reply", null)
+        .eq("status", "PENDING")
+        .order("created_at", { ascending: true })
+        .limit(BATCH_SIZE)
+    }
+
+    const { data: threads, error } = await threadsQuery
 
     if (error) {
       throw new Error(error.message)
@@ -47,7 +58,10 @@ Deno.serve(async () => {
         JSON.stringify({
           status: "success",
           processed: 0,
-          message: "No threads waiting for draft generation.",
+          target_thread_id: targetThreadId,
+          message: targetThreadId
+            ? `Thread ${targetThreadId} was not found.`
+            : "No threads waiting for draft generation.",
         }),
         { headers: { "Content-Type": "application/json" } }
       )
@@ -64,7 +78,22 @@ Deno.serve(async () => {
           )
         }
 
-        const draftReply = await draftEmailReply(thread, thread.categories)
+        const inboundText = getLatestInboundText(thread)
+        const fewShotExamples = await fetchFewShotExamples(supabase, {
+          sender: thread.sender,
+          categoryId: thread.category_id,
+          inboundText,
+        })
+
+        console.log(
+          `Thread ${thread.id}: retrieved ${fewShotExamples.length} few-shot example(s)`
+        )
+
+        const draftReply = await draftEmailReply(
+          thread,
+          thread.categories,
+          fewShotExamples
+        )
 
         const { draftId } = await createGmailDraftReply(supabase, {
           threadId: thread.id,
@@ -97,6 +126,7 @@ Deno.serve(async () => {
         processed,
         failed: failures.length,
         failures,
+        target_thread_id: targetThreadId,
       }),
       { headers: { "Content-Type": "application/json" } }
     )
