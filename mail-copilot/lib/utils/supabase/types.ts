@@ -230,6 +230,8 @@ export type Database = {
           body_text: string | null
           category_id: string | null
           created_at: string
+          gmail_message_id: string
+          gmail_thread_id: string
           id: string
           locked_at: string | null
           sender: string
@@ -244,7 +246,9 @@ export type Database = {
           body_text?: string | null
           category_id?: string | null
           created_at?: string
-          id: string
+          gmail_message_id: string
+          gmail_thread_id: string
+          id?: string
           locked_at?: string | null
           sender?: string
           snippet?: string | null
@@ -258,6 +262,8 @@ export type Database = {
           body_text?: string | null
           category_id?: string | null
           created_at?: string
+          gmail_message_id?: string
+          gmail_thread_id?: string
           id?: string
           locked_at?: string | null
           sender?: string

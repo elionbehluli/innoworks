@@ -63,7 +63,7 @@ async function refreshAccessToken(supabase: AdminClient): Promise<string> {
   const accessToken = tokenData.access_token as string | undefined
 
   if (!accessToken) {
-    throw new Error(`Google token refresh failed: ${JSON.stringify(tokenData)}`)
+    throw new Error(`Google token refresh failed: ${JSON.stringify(tokenData)},  clientId: ${clientId}, clientSecret: ${clientSecret}, refreshToken: ${refreshToken}`)
   }
 
   const expiresAt = new Date(

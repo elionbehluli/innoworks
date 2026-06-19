@@ -2,7 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 import { categorizeEmail } from "../_shared/openai.ts"
-import { getOptionalThreadId } from "../_shared/request-params.ts"
+import { getOptionalMessageId } from "../_shared/request-params.ts"
 import { createAdminClient } from "../_shared/supabase-admin.ts"
 
 const BATCH_SIZE = 3
@@ -10,7 +10,7 @@ const ACTIVE_CATEGORY_STATUS_ID = 1
 
 Deno.serve(async (req) => {
   const supabase = createAdminClient()
-  const targetThreadId = await getOptionalThreadId(req)
+  const targetMessageId = await getOptionalMessageId(req)
 
   try {
     const { data: categories, error: categoriesError } = await supabase
@@ -38,8 +38,8 @@ Deno.serve(async (req) => {
       .from("threads")
       .select("id, subject, sender, body_text, snippet")
 
-    if (targetThreadId) {
-      threadsQuery = threadsQuery.eq("id", targetThreadId)
+    if (targetMessageId) {
+      threadsQuery = threadsQuery.eq("gmail_message_id", targetMessageId)
     } else {
       threadsQuery = threadsQuery
         .is("category_id", null)
@@ -59,9 +59,9 @@ Deno.serve(async (req) => {
         JSON.stringify({
           status: "success",
           processed: 0,
-          target_thread_id: targetThreadId,
-          message: targetThreadId
-            ? `Thread ${targetThreadId} was not found.`
+          target_message_id: targetMessageId,
+          message: targetMessageId
+            ? `Messsage ${targetMessageId} was not found.`
             : "No threads waiting for categorisation.",
         }),
         { headers: { "Content-Type": "application/json" } }
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
         processed,
         failed: failures.length,
         failures,
-        target_thread_id: targetThreadId,
+        target_message_id: targetMessageId,
       }),
       { headers: { "Content-Type": "application/json" } }
     )

@@ -102,14 +102,18 @@ Deno.serve(async () => {
         "Unknown Sender"
       const bodyText = extractBodyText(details.payload)
 
-      const { error: dbError } = await supabase.from("threads").upsert({
-        id: details.threadId,
-        sender,
-        subject,
-        snippet: details.snippet || "",
-        body_text: bodyText,
-        status: "PENDING",
-      })
+      const { error: dbError } = await supabase.from("threads").upsert(
+        {
+          gmail_thread_id: details.threadId,
+          gmail_message_id: details.id,
+          sender,
+          subject,
+          snippet: details.snippet || "",
+          body_text: bodyText,
+          status: "PENDING",
+        },
+        { onConflict: "gmail_message_id", ignoreDuplicates: true }
+      )
 
       if (dbError) {
         console.error(

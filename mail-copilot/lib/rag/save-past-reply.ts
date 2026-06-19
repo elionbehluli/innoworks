@@ -28,12 +28,12 @@ function parseThreadHistory(value: unknown): ThreadHistoryMessage[] {
 
 export async function getExistingThreadHistory(
   supabase: AppSupabaseClient,
-  threadId: string
+  gmailThreadId: string
 ): Promise<ThreadHistoryMessage[]> {
   const { data, error } = await supabase
     .from("past_replies")
     .select("thread_history")
-    .eq("thread_id", threadId)
+    .eq("thread_id", gmailThreadId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -60,7 +60,7 @@ export function buildFullThreadHistory(
 export async function savePastReply(
   supabase: AppSupabaseClient,
   options: {
-    threadId: string
+    gmailThreadId: string
     sender: string
     categoryId: string
     inboundEmail: string
@@ -87,7 +87,7 @@ export async function savePastReply(
   const embedding = await createEmbedding(inboundEmail)
 
   const { error } = await supabase.from("past_replies").insert({
-    thread_id: options.threadId,
+    thread_id: options.gmailThreadId,
     sender: options.sender,
     category_id: options.categoryId,
     thread_history: options.threadHistory as Json,

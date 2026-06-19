@@ -62,7 +62,7 @@ export async function approveAndSendThread(
 
   const { data: thread, error: fetchError } = await supabase
     .from("threads")
-    .select("id, sender, subject, category_id, body_text, snippet")
+    .select("id, gmail_thread_id, sender, subject, category_id, body_text, snippet")
     .eq("id", threadId)
     .in("status", ["PENDING", "IN_PROGRESS"])
     .single()
@@ -86,7 +86,10 @@ export async function approveAndSendThread(
 
   let existingThreadHistory
   try {
-    existingThreadHistory = await getExistingThreadHistory(supabase, thread.id)
+    existingThreadHistory = await getExistingThreadHistory(
+      supabase,
+      thread.gmail_thread_id
+    )
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to load thread history."
@@ -101,7 +104,7 @@ export async function approveAndSendThread(
 
   try {
     await sendGmailReply({
-      threadId: thread.id,
+      threadId: thread.gmail_thread_id,
       sender: thread.sender,
       subject: thread.subject,
       body: trimmedDraft,
@@ -133,7 +136,7 @@ export async function approveAndSendThread(
 
   try {
     await savePastReply(supabase, {
-      threadId: thread.id,
+      gmailThreadId: thread.gmail_thread_id,
       sender: thread.sender,
       categoryId: thread.category_id,
       inboundEmail,

@@ -31,22 +31,29 @@ function isTokenValid(expiresAt: string | undefined): boolean {
 }
 
 async function refreshAccessToken(supabase: SupabaseClient): Promise<string> {
+  const tokenRequestBody = {
+    client_id: Deno.env.get("GOOGLE_CLIENT_ID")!,
+    client_secret: Deno.env.get("GOOGLE_CLIENT_SECRET")!,
+    refresh_token: Deno.env.get("GMAIL_REFRESH_TOKEN")!,
+    grant_type: "refresh_token",
+  }
+
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: Deno.env.get("GOOGLE_CLIENT_ID")!,
-      client_secret: Deno.env.get("GOOGLE_CLIENT_SECRET")!,
-      refresh_token: Deno.env.get("GMAIL_REFRESH_TOKEN")!,
-      grant_type: "refresh_token",
-    }),
+    body: new URLSearchParams(tokenRequestBody),
   })
 
   const tokenData = await tokenResponse.json()
   const accessToken = tokenData.access_token as string | undefined
 
   if (!accessToken) {
-    throw new Error(`Google token refresh failed: ${JSON.stringify(tokenData)}`)
+    throw new Error(
+      `Google token refresh failed: ${JSON.stringify({
+        response: tokenData,
+        requestBody: tokenRequestBody,
+      })}. clientId: ${Deno.env.get("GOOGLE_CLIENT_ID")!}, clientSecret: ${Deno.env.get("GOOGLE_CLIENT_SECRET")!}, refreshToken: ${Deno.env.get("GMAIL_REFRESH_TOKEN")!}`
+    )
   }
 
   const expiresAt = new Date(

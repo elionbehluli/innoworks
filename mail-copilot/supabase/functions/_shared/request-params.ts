@@ -1,10 +1,10 @@
 /// <reference types="deno" />
 
-export async function getOptionalThreadId(req: Request): Promise<string | null> {
+export async function getOptionalMessageId(req: Request): Promise<string | null> {
   const url = new URL(req.url)
   const fromQuery =
-    url.searchParams.get("thread_id")?.trim() ||
-    url.searchParams.get("thread-id")?.trim()
+    url.searchParams.get("message_id")?.trim() ||
+    url.searchParams.get("message-id")?.trim()
 
   if (fromQuery) {
     return fromQuery
@@ -18,11 +18,11 @@ export async function getOptionalThreadId(req: Request): Promise<string | null> 
 
     try {
       const body = await req.json()
-      if (typeof body?.thread_id === "string" && body.thread_id.trim()) {
-        return body.thread_id.trim()
+      if (typeof body?.message_id === "string" && body.message_id.trim()) {
+        return body.message_id.trim()
       }
-      if (typeof body?.["thread-id"] === "string" && body["thread-id"].trim()) {
-        return body["thread-id"].trim()
+      if (typeof body?.["message-id"] === "string" && body["message-id"].trim()) {
+        return body["message-id"].trim()
       }
     } catch {
       return null

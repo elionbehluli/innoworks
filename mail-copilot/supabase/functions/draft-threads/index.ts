@@ -5,13 +5,14 @@ import { createGmailDraftReply } from "../_shared/gmail-draft.ts"
 import { ensureGmailAccessToken } from "../_shared/gmail-token.ts"
 import { draftEmailReply } from "../_shared/openai.ts"
 import { fetchFewShotExamples, getLatestInboundText } from "../_shared/rag.ts"
-import { getOptionalThreadId } from "../_shared/request-params.ts"
+import { getOptionalMessageId } from "../_shared/request-params.ts"
 import { createAdminClient } from "../_shared/supabase-admin.ts"
 
 const BATCH_SIZE = 3
 
 type ThreadWithCategory = {
   id: string
+  gmail_thread_id: string
   subject: string
   sender: string
   body_text: string | null
@@ -25,7 +26,7 @@ type ThreadWithCategory = {
 
 Deno.serve(async (req) => {
   const supabase = createAdminClient()
-  const targetThreadId = await getOptionalThreadId(req)
+  const targetMessageId = await getOptionalMessageId(req)
 
   try {
     await ensureGmailAccessToken(supabase)
@@ -33,11 +34,11 @@ Deno.serve(async (req) => {
     let threadsQuery = supabase
       .from("threads")
       .select(
-        "id, subject, sender, body_text, snippet, category_id, categories(name, prompt_template)"
+        "id, gmail_thread_id, subject, sender, body_text, snippet, category_id, categories(name, prompt_template)"
       )
 
-    if (targetThreadId) {
-      threadsQuery = threadsQuery.eq("id", targetThreadId)
+    if (targetMessageId) {
+      threadsQuery = threadsQuery.eq("gmail_message_id", targetMessageId)
     } else {
       threadsQuery = threadsQuery
         .not("category_id", "is", null)
@@ -58,10 +59,10 @@ Deno.serve(async (req) => {
         JSON.stringify({
           status: "success",
           processed: 0,
-          target_thread_id: targetThreadId,
-          message: targetThreadId
-            ? `Thread ${targetThreadId} was not found.`
-            : "No threads waiting for draft generation.",
+          target_message_id: targetMessageId,
+          message: targetMessageId
+            ? `Message ${targetMessageId} was not found.`
+            : "No message waiting for draft generation.",
         }),
         { headers: { "Content-Type": "application/json" } }
       )
@@ -96,7 +97,7 @@ Deno.serve(async (req) => {
         )
 
         const { draftId } = await createGmailDraftReply(supabase, {
-          threadId: thread.id,
+          threadId: thread.gmail_thread_id,
           sender: thread.sender,
           subject: thread.subject,
           body: draftReply,
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
         processed,
         failed: failures.length,
         failures,
-        target_thread_id: targetThreadId,
+        target_message_id: targetMessageId,
       }),
       { headers: { "Content-Type": "application/json" } }
     )
