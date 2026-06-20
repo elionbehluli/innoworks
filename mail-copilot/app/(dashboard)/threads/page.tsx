@@ -2,6 +2,7 @@ import Link from "next/link"
 import { cookies } from "next/headers"
 
 import { ClaimButton } from "@/components/threads/claim-button"
+import { InboxRefreshButton } from "@/components/inbox/inbox-refresh-button"
 import {
   PAGE_SIZE,
   ThreadsPagination,
@@ -60,7 +61,16 @@ export default async function ThreadsPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-medium">Threads</h1>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-medium">Threads</h1>
+          <p className="text-sm text-muted-foreground">
+            AI-drafted replies ready for review. New mail is synced automatically
+            every minute — use refresh to pull now.
+          </p>
+        </div>
+        <InboxRefreshButton />
+      </div>
 
       {threads && threads.length > 0 ? (
         <>

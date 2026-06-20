@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 
 import { PAGE_SIZE, SentPagination } from "@/components/sent/sent-pagination"
+import { InboxRefreshButton } from "@/components/inbox/inbox-refresh-button"
 import { getSupabase } from "@/lib/utils/supabase/auth"
 import { cn } from "@/lib/utils"
 
@@ -79,12 +80,15 @@ export default async function SentPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-medium">Sent</h1>
-        <p className="text-sm text-muted-foreground">
-          Replies you have sent. Read status updates when the recipient opens
-          the email.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-medium">Sent</h1>
+          <p className="text-sm text-muted-foreground">
+            Replies you have sent. Read status updates when the recipient opens
+            the email.
+          </p>
+        </div>
+        <InboxRefreshButton />
       </div>
 
       {threads && threads.length > 0 ? (

@@ -28,18 +28,6 @@ function getHeader(headers: GmailHeader[], name: string): string | undefined {
     ?.value
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-}
-
-function getAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-}
-
 async function getThreadReplyHeaders(threadId: string): Promise<{
   messageId?: string
   references?: string
@@ -70,89 +58,48 @@ async function getThreadReplyHeaders(threadId: string): Promise<{
   }
 }
 
-function buildHtmlBody(
-  body: string,
-  trackingToken: string,
-  sentAt: string
-): string {
-  const appUrl = getAppUrl()
-  const htmlBody = escapeHtml(body).replace(/\n/g, "<br>")
-  const pixelUrl = `${appUrl}/api/track/open/${trackingToken}.gif?sent=${encodeURIComponent(sentAt)}`
-
-  return [
-    "<html>",
-    "<body>",
-    `<div>${htmlBody}</div>`,
-    "<!-- Open tracking: server ignores pixel hits within 5s of send (Gmail prefetch) -->",
-    `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none!important;visibility:hidden;border:0" />`,
-    "</body>",
-    "</html>",
-  ].join("")
-}
-
-function buildRawReplyMessage(options: {
+function buildRawDraftMessage(options: {
   to: string
   subject: string
   draftSubject?: string | null
   body: string
-  trackingToken: string
-  sentAt: string
   messageId?: string
   references?: string
 }): string {
-  const boundary = `mail_copilot_${Date.now()}`
-  const headers = [
+  const lines = [
     `To: ${options.to}`,
     `Subject: ${replySubject(options.subject, options.draftSubject)}`,
+    'Content-Type: text/plain; charset="UTF-8"',
     "MIME-Version: 1.0",
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ]
 
   if (options.messageId) {
-    headers.push(`In-Reply-To: ${options.messageId}`)
+    lines.push(`In-Reply-To: ${options.messageId}`)
     const references = options.references
       ? `${options.references} ${options.messageId}`
       : options.messageId
-    headers.push(`References: ${references}`)
+    lines.push(`References: ${references}`)
   }
 
-  const plainPart = [
-    `--${boundary}`,
-    'Content-Type: text/plain; charset="UTF-8"',
-    "",
-    options.body,
-  ].join("\r\n")
-
-  const htmlPart = [
-    `--${boundary}`,
-    'Content-Type: text/html; charset="UTF-8"',
-    "",
-    buildHtmlBody(options.body, options.trackingToken, options.sentAt),
-  ].join("\r\n")
-
-  return `${headers.join("\r\n")}\r\n\r\n${plainPart}\r\n${htmlPart}\r\n--${boundary}--\r\n`
+  return `${lines.join("\r\n")}\r\n\r\n${options.body}`
 }
 
-export async function sendGmailReply(options: {
+export async function createGmailDraftReply(options: {
   threadId: string
   sender: string
   subject: string
   draftSubject?: string | null
   body: string
-  trackingToken: string
-  sentAt: string
-}): Promise<{ messageId: string }> {
+}): Promise<{ draftId: string }> {
   const supabase = createAdminClient()
   const { messageId, references } = await getThreadReplyHeaders(options.threadId)
 
   const raw = encodeBase64Url(
-    buildRawReplyMessage({
+    buildRawDraftMessage({
       to: parseEmailAddress(options.sender),
       subject: options.subject,
       draftSubject: options.draftSubject,
       body: options.body,
-      trackingToken: options.trackingToken,
-      sentAt: options.sentAt,
       messageId,
       references,
     })
@@ -160,7 +107,7 @@ export async function sendGmailReply(options: {
 
   const response = await gmailFetch(
     supabase,
-    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+    "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
     {
       method: "POST",
       headers: {
@@ -168,8 +115,10 @@ export async function sendGmailReply(options: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        raw,
-        threadId: options.threadId,
+        message: {
+          raw,
+          threadId: options.threadId,
+        },
       }),
     }
   )
@@ -177,13 +126,13 @@ export async function sendGmailReply(options: {
   const data = await response.json()
   if (!response.ok) {
     throw new Error(
-      `Failed to send Gmail reply: ${data?.error?.message ?? response.statusText}`
+      `Failed to create Gmail draft: ${data?.error?.message ?? response.statusText}`
     )
   }
 
   if (!data.id) {
-    throw new Error("Gmail send API returned no message id")
+    throw new Error("Gmail draft API returned no draft id")
   }
 
-  return { messageId: data.id as string }
+  return { draftId: data.id as string }
 }

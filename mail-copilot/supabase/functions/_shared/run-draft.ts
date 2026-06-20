@@ -125,11 +125,15 @@ export async function runDraft(
         `Thread ${thread.id}: retrieved ${fewShotExamples.length} few-shot example(s)`
       )
 
-      const draftReply = await draftEmailReply(thread, category, fewShotExamples)
+      const draft = await draftEmailReply(thread, category, fewShotExamples)
 
       const { error: updateError } = await supabase
         .from("threads")
-        .update({ ai_draft_reply: draftReply })
+        .update({
+          ai_draft_reply: draft.draftBody,
+          ai_draft_subject: draft.draftSubject || null,
+          ai_reasoning: draft.reasoning || null,
+        })
         .eq("id", thread.id)
 
       if (updateError) {
@@ -141,7 +145,7 @@ export async function runDraft(
           threadId: thread.gmail_thread_id,
           sender: thread.sender,
           subject: thread.subject,
-          body: draftReply,
+          body: draft.draftBody,
         })
         console.log(`Thread ${thread.id} draft generated (Gmail draft ${draftId})`)
       } catch (gmailError) {

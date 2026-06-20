@@ -26,10 +26,21 @@ export async function createCategory(
   const supabase = await requireAdmin()
   const { name, routing_rule, prompt_template } = parsed.data
 
+  const { data: lastCategory } = await supabase
+    .from("categories")
+    .select("sort_order")
+    .neq("status_id", DELETED_STATUS_ID)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const sortOrder = (lastCategory?.sort_order ?? -1) + 1
+
   const { error } = await supabase.from("categories").insert({
     name,
     routing_rule,
     prompt_template,
+    sort_order: sortOrder,
   })
 
   if (error) {
@@ -97,4 +108,56 @@ export async function deleteCategory(id: string) {
   }
 
   revalidatePath("/categories")
+}
+
+export async function moveCategory(
+  id: string,
+  direction: "up" | "down"
+): Promise<{ error?: string }> {
+  const supabase = await requireAdmin()
+
+  const { data: categories, error } = await supabase
+    .from("categories")
+    .select("id, sort_order")
+    .neq("status_id", DELETED_STATUS_ID)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true })
+
+  if (error || !categories?.length) {
+    return { error: error?.message ?? "No categories to reorder." }
+  }
+
+  const index = categories.findIndex((category) => category.id === id)
+  if (index === -1) {
+    return { error: "Category not found." }
+  }
+
+  const swapIndex = direction === "up" ? index - 1 : index + 1
+  if (swapIndex < 0 || swapIndex >= categories.length) {
+    return {}
+  }
+
+  const current = categories[index]
+  const neighbor = categories[swapIndex]
+
+  const { error: firstError } = await supabase
+    .from("categories")
+    .update({ sort_order: neighbor.sort_order })
+    .eq("id", current.id)
+
+  if (firstError) {
+    return { error: firstError.message }
+  }
+
+  const { error: secondError } = await supabase
+    .from("categories")
+    .update({ sort_order: current.sort_order })
+    .eq("id", neighbor.id)
+
+  if (secondError) {
+    return { error: secondError.message }
+  }
+
+  revalidatePath("/categories")
+  return {}
 }

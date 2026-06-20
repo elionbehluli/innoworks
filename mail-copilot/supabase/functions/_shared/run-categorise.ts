@@ -24,7 +24,8 @@ export async function runCategorise(
     .from("categories")
     .select("id, name, routing_rule")
     .eq("status_id", ACTIVE_CATEGORY_STATUS_ID)
-    .order("name")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true })
 
   if (categoriesError) {
     throw new Error(categoriesError.message)

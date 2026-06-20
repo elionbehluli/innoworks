@@ -10,6 +10,39 @@ type ChatMessage = {
   content: string
 }
 
+function parseSenderName(raw: string): string {
+  const trimmed = raw.trim()
+  const match = trimmed.match(/^(.+?)\s*<([^>]+)>$/)
+
+  if (match) {
+    const name = match[1].replace(/^["']|["']$/g, "").trim()
+    if (name) return name
+    return match[2].trim()
+  }
+
+  if (trimmed.includes("@")) {
+    return trimmed.split("@")[0] ?? trimmed
+  }
+
+  return trimmed || "klant"
+}
+
+function interpolatePromptTemplate(
+  template: string,
+  vars: {
+    senderName: string
+    subject: string
+    body: string
+    threadContext: string
+  }
+): string {
+  return template
+    .replaceAll("{{senderName}}", vars.senderName)
+    .replaceAll("{{subject}}", vars.subject)
+    .replaceAll("{{body}}", vars.body)
+    .replaceAll("{{threadContext}}", vars.threadContext)
+}
+
 export type CategoryOption = {
   id: string
   name: string
@@ -99,7 +132,8 @@ export async function categorizeEmail(
       role: "system",
       content: [
         "You classify incoming emails into exactly one category.",
-        "Use the category routing rules to decide the best match.",
+        "Use the category routing rules (plain-language descriptions) to decide the best match.",
+        'If no category fits clearly, choose the category named "Overig" when present.',
         'Respond with JSON only: {"category_id":"<uuid>"}',
         "The category_id must be one of the provided ids.",
       ].join(" "),
@@ -221,11 +255,24 @@ function buildDraftMessages(
   fewShotExamples: FewShotExample[]
 ): ChatMessage[] {
   const inboundBody = truncate(thread.body_text) || thread.snippet?.trim() || ""
+  const senderName = parseSenderName(thread.sender)
+  const interpolatedTemplate = interpolatePromptTemplate(
+    category.prompt_template,
+    {
+      senderName,
+      subject: thread.subject,
+      body: inboundBody,
+      threadContext: inboundBody,
+    }
+  )
   const clientEmail = [
     `From: ${thread.sender}`,
     `Subject: ${thread.subject}`,
     `Body: ${inboundBody}`,
   ].join("\n")
+
+  const jsonShape =
+    '{"category":"<category name>","draftSubject":"<reply subject>","draftBody":"<reply body>","reasoning":"<short explanation>"}'
 
   const messages: ChatMessage[] = [
     {
@@ -239,9 +286,9 @@ function buildDraftMessages(
         "Match the language the client used when possible (e.g. Dutch client → Dutch reply).",
         `Category: ${category.name}`,
         "Category instructions:",
-        category.prompt_template,
-        'For the final task only, respond with JSON: {"draft_reply":"<agent reply body>"}',
-        "The draft_reply must contain only the agent's reply body. No subject line or email headers.",
+        interpolatedTemplate,
+        `For the final task only, respond with JSON: ${jsonShape}`,
+        "draftBody must contain only the agent reply body. draftSubject is the reply subject line.",
       ].join("\n"),
     },
   ]
@@ -285,11 +332,44 @@ function buildDraftMessages(
       "",
       clientEmail,
       "",
-      'Respond with JSON only: {"draft_reply":"<agent reply body>"}',
+      `Respond with JSON only: ${jsonShape}`,
     ].join("\n"),
   })
 
   return messages
+}
+
+export type DraftEmailResult = {
+  category: string
+  draftSubject: string
+  draftBody: string
+  reasoning: string
+}
+
+function parseDraftResult(
+  value: unknown,
+  categoryName: string
+): DraftEmailResult {
+  if (typeof value !== "object" || value === null) {
+    throw new Error("OpenAI returned invalid draft JSON")
+  }
+
+  const record = value as Record<string, unknown>
+  const draftBody = String(record.draftBody ?? record.draft_reply ?? "").trim()
+  const draftSubject = String(record.draftSubject ?? "").trim()
+  const reasoning = String(record.reasoning ?? "").trim()
+  const category = String(record.category ?? categoryName).trim()
+
+  if (!draftBody) {
+    throw new Error("OpenAI returned an empty draft body")
+  }
+
+  return {
+    category: category || categoryName,
+    draftSubject,
+    draftBody,
+    reasoning,
+  }
 }
 
 export async function draftEmailReply(
@@ -301,25 +381,21 @@ export async function draftEmailReply(
   },
   category: CategoryDraftContext,
   fewShotExamples: FewShotExample[] = []
-): Promise<string> {
+): Promise<DraftEmailResult> {
   const inboundBody = thread.body_text?.trim() || thread.snippet?.trim() || ""
 
-  async function generate(examples: FewShotExample[]): Promise<string> {
+  async function generate(examples: FewShotExample[]): Promise<DraftEmailResult> {
     const messages = buildDraftMessages(thread, category, examples)
-    const result = await chatJson<{ draft_reply: string }>(messages)
-    const draftReply = result.draft_reply?.trim()
+    const result = await chatJson<Record<string, unknown>>(messages)
+    const parsed = parseDraftResult(result, category.name)
 
-    if (!draftReply) {
-      throw new Error("OpenAI returned an empty draft reply")
-    }
-
-    if (looksLikeEchoReply(draftReply, inboundBody)) {
+    if (looksLikeEchoReply(parsed.draftBody, inboundBody)) {
       throw new Error(
         "OpenAI returned a draft that mirrors the incoming email instead of replying to it"
       )
     }
 
-    return draftReply
+    return parsed
   }
 
   try {

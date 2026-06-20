@@ -46,6 +46,7 @@ export type Database = {
           name: string
           prompt_template: string
           routing_rule: string
+          sort_order: number
           status_id: number
           updated_at: string
         }
@@ -55,6 +56,7 @@ export type Database = {
           name: string
           prompt_template: string
           routing_rule: string
+          sort_order?: number
           status_id?: number
           updated_at?: string
         }
@@ -64,6 +66,7 @@ export type Database = {
           name?: string
           prompt_template?: string
           routing_rule?: string
+          sort_order?: number
           status_id?: number
           updated_at?: string
         }
@@ -226,6 +229,8 @@ export type Database = {
       threads: {
         Row: {
           ai_draft_reply: string | null
+          ai_draft_subject: string | null
+          ai_reasoning: string | null
           assigned_to: string | null
           body_text: string | null
           category_id: string | null
@@ -246,6 +251,8 @@ export type Database = {
         }
         Insert: {
           ai_draft_reply?: string | null
+          ai_draft_subject?: string | null
+          ai_reasoning?: string | null
           assigned_to?: string | null
           body_text?: string | null
           category_id?: string | null
@@ -266,6 +273,8 @@ export type Database = {
         }
         Update: {
           ai_draft_reply?: string | null
+          ai_draft_subject?: string | null
+          ai_reasoning?: string | null
           assigned_to?: string | null
           body_text?: string | null
           category_id?: string | null
@@ -341,13 +350,10 @@ export type Database = {
           thread_history: Json
         }[]
       }
-      record_email_open: {
-        Args: {
-          p_token: string
-          p_sent_at?: string | null
-        }
-        Returns: undefined
-      }
+      invoke_edge_function: { Args: { function_name: string }; Returns: number }
+      record_email_open:
+        | { Args: { p_token: string }; Returns: undefined }
+        | { Args: { p_sent_at?: string; p_token: string }; Returns: undefined }
     }
     Enums: {
       thread_status: "PENDING" | "IN_PROGRESS" | "RESOLVED" | "SKIPPED"

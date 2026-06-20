@@ -53,13 +53,14 @@ export function CreateCategoryForm() {
 
       <FormField
         id="routing_rule"
-        label="Routing rule"
+        label="AI routing description"
         error={errors.routing_rule?.message}
+        description="Plain-language definition the AI uses to decide if an email belongs here."
       >
-        <input
+        <textarea
           id="routing_rule"
-          type="text"
-          placeholder="e.g. from:support@company.com"
+          rows={3}
+          placeholder="e.g. Emails where a prospect asks to schedule a property viewing."
           className={formFieldClassName}
           aria-invalid={Boolean(errors.routing_rule)}
           {...register("routing_rule")}
@@ -70,11 +71,12 @@ export function CreateCategoryForm() {
         id="prompt_template"
         label="Prompt template"
         error={errors.prompt_template?.message}
+        description="Supports {{senderName}}, {{subject}}, {{body}}, {{threadContext}}."
       >
         <textarea
           id="prompt_template"
           rows={6}
-          placeholder="Instructions for handling emails in this category..."
+          placeholder="Instructions for drafting replies in this category…"
           className={formFieldClassName}
           aria-invalid={Boolean(errors.prompt_template)}
           {...register("prompt_template")}

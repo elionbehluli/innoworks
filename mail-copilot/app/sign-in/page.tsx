@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
 
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
+import { DotBackground } from "@/components/layout/dot-background"
 import { createClient } from "@/lib/utils/supabase/server"
 
 export default async function SignInPage({
@@ -22,8 +23,9 @@ export default async function SignInPage({
   const { error } = await searchParams
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-background p-6">
+      <DotBackground variant="auth" />
+      <div className="relative z-10 w-full max-w-sm space-y-6 rounded-2xl border border-border/60 bg-background/75 p-8 shadow-lg shadow-primary/5 backdrop-blur-sm">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-medium tracking-tight">Sign in</h1>
           <p className="text-sm text-muted-foreground">

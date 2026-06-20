@@ -49,7 +49,7 @@ export default async function ThreadDetailPage({
   const { data: thread } = await supabase
     .from("threads")
     .select(
-      "id, subject, sender, snippet, body_text, ai_draft_reply, status, created_at, updated_at, categories(name), profiles!threads_assigned_to_fkey(display_name)"
+      "id, subject, sender, snippet, body_text, ai_draft_reply, ai_draft_subject, ai_reasoning, status, created_at, updated_at, categories(name), profiles!threads_assigned_to_fkey(display_name)"
     )
     .eq("id", id)
     .single()
@@ -127,7 +127,12 @@ export default async function ThreadDetailPage({
         />
         <ThreadDraftEditor
           threadId={thread.id}
+          initialSubject={
+            thread.ai_draft_subject?.trim() ||
+            (thread.subject ? `Re: ${thread.subject.replace(/^re:\s*/i, "")}` : "")
+          }
           initialDraft={thread.ai_draft_reply ?? ""}
+          reasoning={thread.ai_reasoning}
           isActionable={isActionable}
         />
       </div>

@@ -9,12 +9,14 @@ export function FormField({
   id,
   label,
   error,
+  description,
   children,
   className,
 }: {
   id: string
   label: string
   error?: string
+  description?: string
   children: ReactNode
   className?: string
 }) {
@@ -23,6 +25,9 @@ export function FormField({
       <label htmlFor={id} className="text-sm font-medium">
         {label}
       </label>
+      {description && (
+        <p className="text-xs text-muted-foreground">{description}</p>
+      )}
       {children}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

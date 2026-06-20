@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { CategoryActions } from "@/components/categories/category-actions"
+import { CategoryReorderButtons } from "@/components/categories/category-reorder-buttons"
 import {
   CategoriesPagination,
   PAGE_SIZE,
@@ -35,9 +36,10 @@ export default async function CategoriesPage({
     supabase.from("profiles").select("role").eq("id", user!.id).single(),
     supabase
       .from("categories")
-      .select("id, name, routing_rule, statuses(name)", { count: "exact" })
+      .select("id, name, routing_rule, sort_order, statuses(name)", { count: "exact" })
       .neq("status_id", DELETED_STATUS_ID)
-      .order("name")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
       .range(from, to),
   ])
 
@@ -63,14 +65,15 @@ export default async function CategoriesPage({
                 <tr className="border-b border-border bg-muted/50">
                   <th className="px-4 py-3 text-left font-medium">Name</th>
                   <th className="px-4 py-3 text-left font-medium">
-                    Routing rule
+                    AI routing description
                   </th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
+                  {isAdmin && <th className="px-4 py-3 text-right">Order</th>}
                   {isAdmin && <th className="px-4 py-3 text-right" />}
                 </tr>
               </thead>
               <tbody>
-                {categories.map((category) => (
+                {categories.map((category, index) => (
                   <tr
                     key={category.id}
                     className="border-b border-border last:border-b-0"
@@ -87,6 +90,15 @@ export default async function CategoriesPage({
                           | null
                       )}
                     </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-right">
+                        <CategoryReorderButtons
+                          categoryId={category.id}
+                          isFirst={index === 0}
+                          isLast={index === categories.length - 1}
+                        />
+                      </td>
+                    )}
                     {isAdmin && (
                       <td className="px-4 py-3 text-right">
                         <CategoryActions
