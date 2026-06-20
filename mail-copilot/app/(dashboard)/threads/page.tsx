@@ -66,7 +66,7 @@ export default async function ThreadsPage({
           <h1 className="text-2xl font-medium">Threads</h1>
           <p className="text-sm text-muted-foreground">
             AI-drafted replies ready for review. New mail is synced automatically
-            every minute — use refresh to pull now.
+            every minute — use refresh to reload this page.
           </p>
         </div>
         <InboxRefreshButton />

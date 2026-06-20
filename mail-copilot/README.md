@@ -78,7 +78,7 @@ See **`supabase/BACKGROUND_PIPELINE.md`** for Vault secrets (`project_url`, `ser
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), sign in with Google, and use **Refresh inbox** on Threads to trigger a manual sync.
+Open [http://localhost:3000](http://localhost:3000), sign in with Google. Mail syncs via cron; use **Refresh** on Threads/Sent to reload the latest data.
 
 ## Architecture
 
@@ -93,7 +93,7 @@ Dashboard review
     ↓ Send now (stretch B) → Gmail send + open tracking
 ```
 
-Manual **Refresh inbox** calls the `process-inbox` orchestrator (sync → categorise → draft) from the Next.js server using the service role key.
+Manual **Refresh** on Threads/Sent re-fetches the page from the database (cron remains the source of new mail).
 
 ## Features vs brief
 
