@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { cookies } from "next/headers"
 
 import { CategoryActions } from "@/components/categories/category-actions"
 import {
@@ -7,7 +6,7 @@ import {
   PAGE_SIZE,
 } from "@/components/categories/categories-pagination"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/utils/supabase/server"
+import { getSessionUser, getSupabase } from "@/lib/utils/supabase/auth"
 
 const DELETED_STATUS_ID = 2
 
@@ -29,25 +28,18 @@ export default async function CategoriesPage({
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = await getSupabase()
+  const user = await getSessionUser()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user!.id)
-    .single()
-
-  const { data: categories, count } = await supabase
-    .from("categories")
-    .select("id, name, routing_rule, statuses(name)", { count: "exact" })
-    .neq("status_id", DELETED_STATUS_ID)
-    .order("name")
-    .range(from, to)
+  const [{ data: profile }, { data: categories, count }] = await Promise.all([
+    supabase.from("profiles").select("role").eq("id", user!.id).single(),
+    supabase
+      .from("categories")
+      .select("id, name, routing_rule, statuses(name)", { count: "exact" })
+      .neq("status_id", DELETED_STATUS_ID)
+      .order("name")
+      .range(from, to),
+  ])
 
   const isAdmin = profile?.role === "ADMIN"
   const totalCount = count ?? 0

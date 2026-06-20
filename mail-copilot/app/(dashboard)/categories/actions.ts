@@ -1,35 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { createClient } from "@/lib/utils/supabase/server"
-
-async function requireAdmin() {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/sign-in")
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
-  if (profile?.role !== "ADMIN") {
-    redirect("/categories")
-  }
-
-  return supabase
-}
+import { requireAdmin } from "@/lib/utils/supabase/auth"
 
 export async function createCategory(
   _prevState: string | null,
