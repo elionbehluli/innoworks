@@ -6,22 +6,15 @@ import { getInitials, parseSender } from "@/lib/email/parse-sender"
 
 import { FormattedEmailContent } from "./formatted-email-content"
 
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(date))
-}
-
 export function IncomingEmailPanel({
   sender,
   content,
-  receivedAt,
+  receivedAtLabel,
   emptyMessage,
 }: {
   sender: string
   content: string | null | undefined
-  receivedAt: string
+  receivedAtLabel: string
   emptyMessage: string
 }) {
   const trimmedContent = content?.trim()
@@ -53,7 +46,7 @@ export function IncomingEmailPanel({
                 <Mail className="size-3 shrink-0" />
                 {email}
               </span>
-              <span>{formatDate(receivedAt)}</span>
+              <span>{receivedAtLabel}</span>
             </div>
           </div>
         </div>

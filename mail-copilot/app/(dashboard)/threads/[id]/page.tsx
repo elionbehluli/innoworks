@@ -122,7 +122,7 @@ export default async function ThreadDetailPage({
         <IncomingEmailPanel
           sender={thread.sender}
           content={incomingEmail}
-          receivedAt={thread.created_at}
+          receivedAtLabel={formatDate(thread.created_at)}
           emptyMessage="No email content available for this thread."
         />
         <ThreadDraftEditor
