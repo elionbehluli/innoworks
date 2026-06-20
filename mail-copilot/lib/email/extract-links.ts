@@ -5,6 +5,31 @@ export function extractHttpsLinks(text: string): string[] {
   return [...new Set(matches)]
 }
 
+function trimAngleBracketWrappers(
+  segments: Array<{ type: "text" | "url"; value: string }>
+): Array<{ type: "text" | "url"; value: string }> {
+  return segments
+    .map((segment, index) => {
+      if (segment.type !== "text") return segment
+
+      let value = segment.value
+
+      const nextIsUrl = segments[index + 1]?.type === "url"
+      const prevIsUrl = segments[index - 1]?.type === "url"
+
+      if (nextIsUrl) {
+        value = value.replace(/<$/, "")
+      }
+
+      if (prevIsUrl) {
+        value = value.replace(/^>/, "")
+      }
+
+      return { type: "text" as const, value }
+    })
+    .filter((segment) => segment.type === "url" || segment.value.length > 0)
+}
+
 export function splitTextByHttpsLinks(
   text: string
 ): Array<{ type: "text" | "url"; value: string }> {
@@ -26,5 +51,5 @@ export function splitTextByHttpsLinks(
     segments.push({ type: "text", value: text.slice(lastIndex) })
   }
 
-  return segments
+  return trimAngleBracketWrappers(segments)
 }

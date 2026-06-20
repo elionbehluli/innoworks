@@ -2,10 +2,8 @@
 
 import { Mail } from "lucide-react"
 
-import { extractHttpsLinks } from "@/lib/email/extract-links"
 import { getInitials, parseSender } from "@/lib/email/parse-sender"
 
-import { EmailLinkBadge } from "./email-link-badge"
 import { FormattedEmailContent } from "./formatted-email-content"
 
 function formatDate(date: string) {
@@ -29,7 +27,6 @@ export function IncomingEmailPanel({
   const trimmedContent = content?.trim()
   const { name, email } = parseSender(sender)
   const initials = getInitials(name, email)
-  const links = trimmedContent ? extractHttpsLinks(trimmedContent) : []
 
   return (
     <section className="flex flex-col overflow-hidden rounded-lg border border-border">
@@ -63,17 +60,7 @@ export function IncomingEmailPanel({
 
         <div className="flex-1 p-4">
           {trimmedContent ? (
-            <div className="space-y-4">
-              {links.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {links.map((url) => (
-                    <EmailLinkBadge key={url} url={url} />
-                  ))}
-                </div>
-              )}
-
-              <FormattedEmailContent content={trimmedContent} />
-            </div>
+            <FormattedEmailContent content={trimmedContent} />
           ) : (
             <p className="text-sm text-muted-foreground">{emptyMessage}</p>
           )}

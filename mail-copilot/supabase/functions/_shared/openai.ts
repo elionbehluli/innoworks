@@ -303,20 +303,33 @@ export async function draftEmailReply(
   fewShotExamples: FewShotExample[] = []
 ): Promise<string> {
   const inboundBody = thread.body_text?.trim() || thread.snippet?.trim() || ""
-  const messages = buildDraftMessages(thread, category, fewShotExamples)
 
-  const result = await chatJson<{ draft_reply: string }>(messages)
+  async function generate(examples: FewShotExample[]): Promise<string> {
+    const messages = buildDraftMessages(thread, category, examples)
+    const result = await chatJson<{ draft_reply: string }>(messages)
+    const draftReply = result.draft_reply?.trim()
 
-  const draftReply = result.draft_reply?.trim()
-  if (!draftReply) {
-    throw new Error("OpenAI returned an empty draft reply")
+    if (!draftReply) {
+      throw new Error("OpenAI returned an empty draft reply")
+    }
+
+    if (looksLikeEchoReply(draftReply, inboundBody)) {
+      throw new Error(
+        "OpenAI returned a draft that mirrors the incoming email instead of replying to it"
+      )
+    }
+
+    return draftReply
   }
 
-  if (looksLikeEchoReply(draftReply, inboundBody)) {
-    throw new Error(
-      "OpenAI returned a draft that mirrors the incoming email instead of replying to it"
+  try {
+    return await generate(fewShotExamples)
+  } catch (error) {
+    if (fewShotExamples.length === 0) throw error
+
+    console.warn(
+      "Draft generation failed with few-shot examples, retrying without RAG context"
     )
+    return await generate([])
   }
-
-  return draftReply
 }

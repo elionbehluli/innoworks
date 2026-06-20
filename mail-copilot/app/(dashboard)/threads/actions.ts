@@ -67,7 +67,9 @@ export async function approveAndSendThread(
 
   const { data: thread, error: fetchError } = await supabase
     .from("threads")
-    .select("id, gmail_thread_id, sender, subject, category_id, body_text, snippet")
+    .select(
+      "id, gmail_thread_id, sender, subject, category_id, body_text, snippet, tracking_token"
+    )
     .eq("id", threadId)
     .in("status", ["PENDING", "IN_PROGRESS"])
     .single()
@@ -107,14 +109,33 @@ export async function approveAndSendThread(
     trimmedDraft
   )
 
+  const sentAt = new Date().toISOString()
+
+  const { error: sentAtError } = await supabase
+    .from("threads")
+    .update({ sent_at: sentAt })
+    .eq("id", threadId)
+    .in("status", ["PENDING", "IN_PROGRESS"])
+
+  if (sentAtError) {
+    return { error: sentAtError.message }
+  }
+
   try {
     await sendGmailReply({
       threadId: thread.gmail_thread_id,
       sender: thread.sender,
       subject: thread.subject,
       body: trimmedDraft,
+      trackingToken: thread.tracking_token,
+      sentAt,
     })
   } catch (err) {
+    await supabase
+      .from("threads")
+      .update({ sent_at: null })
+      .eq("id", threadId)
+
     const message =
       err instanceof Error ? err.message : "Failed to send email via Gmail."
     return { error: message }
@@ -125,6 +146,7 @@ export async function approveAndSendThread(
     .update({
       ai_draft_reply: trimmedDraft,
       status: "RESOLVED",
+      sent_at: sentAt,
     })
     .eq("id", threadId)
     .in("status", ["PENDING", "IN_PROGRESS"])
@@ -157,6 +179,7 @@ export async function approveAndSendThread(
   }
 
   revalidatePath("/threads")
+  revalidatePath("/sent")
   revalidatePath(`/threads/${threadId}`)
   redirect("/threads")
 }

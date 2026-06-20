@@ -8,7 +8,9 @@
     "@shared/gmail-token": "../_shared/gmail-token.ts",
     "@shared/openai": "../_shared/openai.ts",
     "@shared/rag": "../_shared/rag.ts",
+    "@shared/run-categorise": "../_shared/run-categorise.ts",
     "@shared/run-draft": "../_shared/run-draft.ts",
+    "@shared/run-sync-gmail": "../_shared/run-sync-gmail.ts",
     "@shared/supabase-admin": "../_shared/supabase-admin.ts"
   }
 }

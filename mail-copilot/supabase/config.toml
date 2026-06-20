@@ -363,3 +363,9 @@ entrypoint = "./functions/draft-threads/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/draft-threads/*.html" ]
+
+[functions.process-inbox]
+enabled = true
+verify_jwt = true
+import_map = "./functions/process-inbox/deno.json"
+entrypoint = "./functions/process-inbox/index.ts"

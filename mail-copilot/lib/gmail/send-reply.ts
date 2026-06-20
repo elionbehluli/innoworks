@@ -25,6 +25,18 @@ function getHeader(headers: GmailHeader[], name: string): string | undefined {
     ?.value
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+}
+
+function getAppUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+}
+
 async function getThreadReplyHeaders(threadId: string): Promise<{
   messageId?: string
   references?: string
@@ -55,29 +67,66 @@ async function getThreadReplyHeaders(threadId: string): Promise<{
   }
 }
 
+function buildHtmlBody(
+  body: string,
+  trackingToken: string,
+  sentAt: string
+): string {
+  const appUrl = getAppUrl()
+  const htmlBody = escapeHtml(body).replace(/\n/g, "<br>")
+  const pixelUrl = `${appUrl}/api/track/open/${trackingToken}.gif?sent=${encodeURIComponent(sentAt)}`
+
+  return [
+    "<html>",
+    "<body>",
+    `<div>${htmlBody}</div>`,
+    "<!-- Open tracking: server ignores pixel hits within 5s of send (Gmail prefetch) -->",
+    `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none!important;visibility:hidden;border:0" />`,
+    "</body>",
+    "</html>",
+  ].join("")
+}
+
 function buildRawReplyMessage(options: {
   to: string
   subject: string
   body: string
+  trackingToken: string
+  sentAt: string
   messageId?: string
   references?: string
 }): string {
-  const lines = [
+  const boundary = `mail_copilot_${Date.now()}`
+  const headers = [
     `To: ${options.to}`,
     `Subject: ${replySubject(options.subject)}`,
-    'Content-Type: text/plain; charset="UTF-8"',
     "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ]
 
   if (options.messageId) {
-    lines.push(`In-Reply-To: ${options.messageId}`)
+    headers.push(`In-Reply-To: ${options.messageId}`)
     const references = options.references
       ? `${options.references} ${options.messageId}`
       : options.messageId
-    lines.push(`References: ${references}`)
+    headers.push(`References: ${references}`)
   }
 
-  return `${lines.join("\r\n")}\r\n\r\n${options.body}`
+  const plainPart = [
+    `--${boundary}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    "",
+    options.body,
+  ].join("\r\n")
+
+  const htmlPart = [
+    `--${boundary}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    "",
+    buildHtmlBody(options.body, options.trackingToken, options.sentAt),
+  ].join("\r\n")
+
+  return `${headers.join("\r\n")}\r\n\r\n${plainPart}\r\n${htmlPart}\r\n--${boundary}--\r\n`
 }
 
 export async function sendGmailReply(options: {
@@ -85,6 +134,8 @@ export async function sendGmailReply(options: {
   sender: string
   subject: string
   body: string
+  trackingToken: string
+  sentAt: string
 }): Promise<{ messageId: string }> {
   const supabase = createAdminClient()
   const { messageId, references } = await getThreadReplyHeaders(options.threadId)
@@ -94,6 +145,8 @@ export async function sendGmailReply(options: {
       to: parseEmailAddress(options.sender),
       subject: options.subject,
       body: options.body,
+      trackingToken: options.trackingToken,
+      sentAt: options.sentAt,
       messageId,
       references,
     })

@@ -234,10 +234,14 @@ export type Database = {
           gmail_thread_id: string
           id: string
           locked_at: string | null
+          open_count: number
+          opened_at: string | null
           sender: string
+          sent_at: string | null
           snippet: string | null
           status: Database["public"]["Enums"]["thread_status"]
           subject: string
+          tracking_token: string
           updated_at: string
         }
         Insert: {
@@ -250,10 +254,14 @@ export type Database = {
           gmail_thread_id: string
           id?: string
           locked_at?: string | null
+          open_count?: number
+          opened_at?: string | null
           sender?: string
+          sent_at?: string | null
           snippet?: string | null
           status?: Database["public"]["Enums"]["thread_status"]
           subject?: string
+          tracking_token?: string
           updated_at?: string
         }
         Update: {
@@ -266,10 +274,14 @@ export type Database = {
           gmail_thread_id?: string
           id?: string
           locked_at?: string | null
+          open_count?: number
+          opened_at?: string | null
           sender?: string
+          sent_at?: string | null
           snippet?: string | null
           status?: Database["public"]["Enums"]["thread_status"]
           subject?: string
+          tracking_token?: string
           updated_at?: string
         }
         Relationships: [
@@ -328,6 +340,13 @@ export type Database = {
           similarity: number
           thread_history: Json
         }[]
+      }
+      record_email_open: {
+        Args: {
+          p_token: string
+          p_sent_at?: string | null
+        }
+        Returns: undefined
       }
     }
     Enums: {
