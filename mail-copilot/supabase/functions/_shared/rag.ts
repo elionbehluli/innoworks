@@ -8,6 +8,15 @@ type SupabaseClient = ReturnType<typeof createClient>
 const RAG_MATCH_THRESHOLD = 0.75
 const RAG_MATCH_COUNT = 2
 
+type FewShotExampleRow = {
+  id: string
+  thread_history: unknown
+  inbound_email: string | null
+  outbound_reply: string | null
+  similarity: number
+  match_level: string | null
+}
+
 export function getLatestInboundText(thread: {
   body_text: string | null
   snippet: string | null
@@ -41,7 +50,9 @@ export async function fetchFewShotExamples(
     throw new Error(`RAG retrieval failed: ${error.message}`)
   }
 
-  return (data ?? []).map((row) => ({
+  const rows = (data ?? []) as FewShotExampleRow[]
+
+  return rows.map((row) => ({
     id: String(row.id),
     thread_history: Array.isArray(row.thread_history) ? row.thread_history : [],
     inbound_email: String(row.inbound_email ?? ""),
