@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { createGmailDraftReply } from "@/lib/gmail/create-draft"
 import { sendGmailReply } from "@/lib/gmail/send-reply"
 import {
   buildFullThreadHistory,
@@ -92,7 +91,7 @@ export async function claimThread(threadId: string) {
   redirect(`/threads/${threadId}`)
 }
 
-export async function approveAndSaveDraft(
+export async function saveDraftReply(
   threadId: string,
   input: { draft: string; subject?: string }
 ): Promise<{ error?: string }> {
@@ -109,30 +108,14 @@ export async function approveAndSaveDraft(
     return { error: loaded.error }
   }
 
-  const thread = loaded.thread
   const trimmedDraft = parsed.data.draft
   const draftSubject = parsed.data.subject?.trim() || null
-
-  try {
-    await createGmailDraftReply({
-      threadId: thread.gmail_thread_id,
-      sender: thread.sender,
-      subject: thread.subject,
-      draftSubject,
-      body: trimmedDraft,
-    })
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to save draft in Gmail."
-    return { error: message }
-  }
 
   const { data, error } = await supabase
     .from("threads")
     .update({
       ai_draft_reply: trimmedDraft,
       ai_draft_subject: draftSubject,
-      status: "RESOLVED",
     })
     .eq("id", threadId)
     .in("status", ["PENDING", "IN_PROGRESS"])
@@ -141,16 +124,13 @@ export async function approveAndSaveDraft(
 
   if (error || !data) {
     return {
-      error:
-        error?.message ??
-        "Draft was saved in Gmail, but the thread could not be updated.",
+      error: error?.message ?? "Draft could not be saved.",
     }
   }
 
   revalidatePath("/threads")
-  revalidatePath("/sent")
   revalidatePath(`/threads/${threadId}`)
-  redirect("/threads")
+  return {}
 }
 
 export async function sendThreadNow(

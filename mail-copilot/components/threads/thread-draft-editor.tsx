@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import {
-  approveAndSaveDraft,
+  saveDraftReply,
   sendThreadNow,
   skipThread,
 } from "@/app/(dashboard)/threads/actions"
@@ -47,7 +47,8 @@ export function ThreadDraftEditor({
     register,
     handleSubmit,
     getValues,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = useForm<DraftReviewInput>({
     resolver: zodResolver(draftReviewSchema),
     defaultValues: {
@@ -61,10 +62,13 @@ export function ThreadDraftEditor({
   const onSaveDraft = handleSubmit((data) => {
     setFeedback(null)
     startSaveDraft(async () => {
-      const result = await approveAndSaveDraft(threadId, data)
+      const result = await saveDraftReply(threadId, data)
       if (result?.error) {
         setFeedback({ type: "error", message: result.error })
+        return
       }
+      reset(data)
+      setFeedback({ type: "success", message: "Draft saved." })
     })
   })
 
@@ -113,7 +117,7 @@ export function ThreadDraftEditor({
         <h2 className="text-sm font-medium">AI draft reply</h2>
         {isActionable && (
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Review the draft, then save to Gmail Drafts or send immediately.
+            Edit the draft if needed, save your changes, then send or skip.
           </p>
         )}
       </div>
@@ -202,21 +206,24 @@ export function ThreadDraftEditor({
 
         {isActionable && (
           <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              onClick={onSaveDraft}
-              disabled={isBusy}
-              className="min-w-40"
-            >
-              {isSavingDraft ? (
-                <>
-                  <Loader2 className="animate-spin" />
-                  Saving draft…
-                </>
-              ) : (
-                "Approve & save draft"
-              )}
-            </Button>
+            {isDirty && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onSaveDraft}
+                disabled={isBusy}
+                className="min-w-24"
+              >
+                {isSavingDraft ? (
+                  <>
+                    <Loader2 className="animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            )}
             <Button
               type="button"
               variant="secondary"
