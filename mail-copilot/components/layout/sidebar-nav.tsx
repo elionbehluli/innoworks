@@ -7,7 +7,7 @@ import { LogoutButton } from "@/components/auth/logout-button"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/", label: "Home" },
+  { href: "/", label: "Dashboard" },
   { href: "/threads", label: "Threads" },
   { href: "/categories", label: "Categories" },
 ]
