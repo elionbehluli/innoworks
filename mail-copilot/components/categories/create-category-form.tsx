@@ -1,71 +1,91 @@
 "use client"
 
-import { useActionState } from "react"
 import Link from "next/link"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 
 import { createCategory } from "@/app/(dashboard)/categories/actions"
 import { Button } from "@/components/ui/button"
-
-const fieldClassName =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+import {
+  FormField,
+  FormRootError,
+  formFieldClassName,
+} from "@/components/ui/form-field"
+import {
+  createCategorySchema,
+  type CreateCategoryInput,
+} from "@/lib/validations/category"
 
 export function CreateCategoryForm() {
-  const [error, formAction, isPending] = useActionState(
-    createCategory,
-    null
-  )
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateCategoryInput>({
+    resolver: zodResolver(createCategorySchema),
+    defaultValues: {
+      name: "",
+      routing_rule: "",
+      prompt_template: "",
+    },
+  })
+
+  const onSubmit = handleSubmit(async (data) => {
+    const result = await createCategory(data)
+    if (result?.error) {
+      setError("root", { message: result.error })
+    }
+  })
 
   return (
-    <form action={formAction} className="max-w-lg space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="name" className="text-sm font-medium">
-          Name
-        </label>
+    <form onSubmit={onSubmit} className="max-w-lg space-y-4">
+      <FormField id="name" label="Name" error={errors.name?.message}>
         <input
           id="name"
-          name="name"
           type="text"
-          required
-          className={fieldClassName}
           placeholder="e.g. Support"
+          className={formFieldClassName}
+          aria-invalid={Boolean(errors.name)}
+          {...register("name")}
         />
-      </div>
+      </FormField>
 
-      <div className="space-y-2">
-        <label htmlFor="routing_rule" className="text-sm font-medium">
-          Routing rule
-        </label>
+      <FormField
+        id="routing_rule"
+        label="Routing rule"
+        error={errors.routing_rule?.message}
+      >
         <input
           id="routing_rule"
-          name="routing_rule"
           type="text"
-          required
-          className={fieldClassName}
           placeholder="e.g. from:support@company.com"
+          className={formFieldClassName}
+          aria-invalid={Boolean(errors.routing_rule)}
+          {...register("routing_rule")}
         />
-      </div>
+      </FormField>
 
-      <div className="space-y-2">
-        <label htmlFor="prompt_template" className="text-sm font-medium">
-          Prompt template
-        </label>
+      <FormField
+        id="prompt_template"
+        label="Prompt template"
+        error={errors.prompt_template?.message}
+      >
         <textarea
           id="prompt_template"
-          name="prompt_template"
-          required
           rows={6}
-          className={fieldClassName}
           placeholder="Instructions for handling emails in this category..."
+          className={formFieldClassName}
+          aria-invalid={Boolean(errors.prompt_template)}
+          {...register("prompt_template")}
         />
-      </div>
+      </FormField>
 
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      <FormRootError message={errors.root?.message} />
 
       <div className="flex gap-2">
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Creating..." : "Create category"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Creating..." : "Create category"}
         </Button>
         <Button variant="outline" asChild>
           <Link href="/categories">Cancel</Link>

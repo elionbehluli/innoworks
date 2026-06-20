@@ -11,6 +11,7 @@ import {
   getLatestInboundText,
   savePastReply,
 } from "@/lib/rag/save-past-reply"
+import { draftReplySchema } from "@/lib/validations/thread"
 import { createClient } from "@/lib/utils/supabase/server"
 
 async function requireUser() {
@@ -53,10 +54,14 @@ export async function approveAndSendThread(
   threadId: string,
   draftReply: string
 ): Promise<{ error?: string }> {
-  const trimmedDraft = draftReply.trim()
-  if (!trimmedDraft) {
-    return { error: "Draft reply cannot be empty." }
+  const parsed = draftReplySchema.safeParse({ draft: draftReply })
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid draft reply.",
+    }
   }
+
+  const trimmedDraft = parsed.data.draft
 
   const { supabase } = await requireUser()
 

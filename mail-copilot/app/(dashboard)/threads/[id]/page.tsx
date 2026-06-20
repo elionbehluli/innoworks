@@ -2,6 +2,7 @@ import Link from "next/link"
 import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
 
+import { IncomingEmailPanel } from "@/components/threads/incoming-email-panel"
 import { ThreadDraftEditor } from "@/components/threads/thread-draft-editor"
 import { createClient } from "@/lib/utils/supabase/server"
 import { cn } from "@/lib/utils"
@@ -34,33 +35,6 @@ function formatDate(date: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(date))
-}
-
-function MessagePanel({
-  title,
-  content,
-  emptyMessage,
-}: {
-  title: string
-  content: string | null | undefined
-  emptyMessage: string
-}) {
-  return (
-    <section className="flex flex-col overflow-hidden rounded-lg border border-border">
-      <div className="border-b border-border bg-muted/50 px-4 py-3">
-        <h2 className="text-sm font-medium">{title}</h2>
-      </div>
-      <div className="min-h-48 flex-1 p-4">
-        {content?.trim() ? (
-          <pre className="font-sans text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-            {content}
-          </pre>
-        ) : (
-          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-        )}
-      </div>
-    </section>
-  )
 }
 
 export default async function ThreadDetailPage({
@@ -106,10 +80,7 @@ export default async function ThreadDetailPage({
         </Link>
 
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-medium">{thread.subject}</h1>
-            <p className="text-sm text-muted-foreground">{thread.sender}</p>
-          </div>
+          <h1 className="text-2xl font-medium">{thread.subject}</h1>
           <span
             className={cn(
               "inline-flex rounded-md px-2 py-0.5 text-xs font-medium",
@@ -148,9 +119,10 @@ export default async function ThreadDetailPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <MessagePanel
-          title="Incoming email"
+        <IncomingEmailPanel
+          sender={thread.sender}
           content={incomingEmail}
+          receivedAt={thread.created_at}
           emptyMessage="No email content available for this thread."
         />
         <ThreadDraftEditor

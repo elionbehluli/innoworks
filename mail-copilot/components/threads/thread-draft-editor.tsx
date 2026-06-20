@@ -1,16 +1,24 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2 } from "lucide-react"
+import { useForm } from "react-hook-form"
 
 import {
   approveAndSendThread,
   skipThread,
 } from "@/app/(dashboard)/threads/actions"
 import { Button } from "@/components/ui/button"
-
-const fieldClassName =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-relaxed outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+import {
+  FormField,
+  FormRootError,
+  formFieldClassName,
+} from "@/components/ui/form-field"
+import {
+  draftReplySchema,
+  type DraftReplyInput,
+} from "@/lib/validations/thread"
 
 export function ThreadDraftEditor({
   threadId,
@@ -21,7 +29,6 @@ export function ThreadDraftEditor({
   initialDraft: string
   isActionable: boolean
 }) {
-  const [draft, setDraft] = useState(initialDraft)
   const [feedback, setFeedback] = useState<{
     type: "success" | "error"
     message: string
@@ -29,17 +36,26 @@ export function ThreadDraftEditor({
   const [isApproving, startApprove] = useTransition()
   const [isSkipping, startSkip] = useTransition()
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<DraftReplyInput>({
+    resolver: zodResolver(draftReplySchema),
+    defaultValues: { draft: initialDraft },
+  })
+
   const isBusy = isApproving || isSkipping
 
-  function handleApprove() {
+  const onApprove = handleSubmit((data) => {
     setFeedback(null)
     startApprove(async () => {
-      const result = await approveAndSendThread(threadId, draft)
+      const result = await approveAndSendThread(threadId, data.draft)
       if (result?.error) {
         setFeedback({ type: "error", message: result.error })
       }
     })
-  }
+  })
 
   function handleSkip() {
     const confirmed = window.confirm(
@@ -56,6 +72,8 @@ export function ThreadDraftEditor({
     })
   }
 
+  const draftValue = initialDraft
+
   return (
     <section className="flex flex-col overflow-hidden rounded-lg border border-border">
       <div className="border-b border-border bg-muted/50 px-4 py-3">
@@ -69,20 +87,27 @@ export function ThreadDraftEditor({
 
       <div className="flex flex-1 flex-col gap-4 p-4">
         {isActionable ? (
-          <textarea
+          <FormField
             id="draft-reply"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            rows={14}
-            className={`${fieldClassName} min-h-64 resize-y`}
-            placeholder="No AI draft has been generated yet."
-            disabled={isBusy}
-          />
+            label="Draft reply"
+            error={errors.draft?.message}
+            className="flex-1"
+          >
+            <textarea
+              id="draft-reply"
+              rows={14}
+              className={`${formFieldClassName} min-h-64 resize-y leading-relaxed`}
+              placeholder="No AI draft has been generated yet."
+              disabled={isBusy}
+              aria-invalid={Boolean(errors.draft)}
+              {...register("draft")}
+            />
+          </FormField>
         ) : (
           <div className="min-h-48">
-            {draft.trim() ? (
+            {draftValue.trim() ? (
               <pre className="font-sans text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-                {draft}
+                {draftValue}
               </pre>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -91,6 +116,8 @@ export function ThreadDraftEditor({
             )}
           </div>
         )}
+
+        <FormRootError message={errors.root?.message} />
 
         {feedback && (
           <div
@@ -109,8 +136,8 @@ export function ThreadDraftEditor({
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
-              onClick={handleApprove}
-              disabled={isBusy || !draft.trim()}
+              onClick={onApprove}
+              disabled={isBusy}
               className="min-w-36"
             >
               {isApproving ? (
